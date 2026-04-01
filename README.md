@@ -1,4 +1,4 @@
-# 🏆 RIFT 2026 — Graph-Based Money Muling Detection Engine
+# 🏆 PROTEX 2026 — Graph-Based Money Muling Detection Engine
 
 > **Financial Graph Intelligence System** · RIFT 2026 Hackathon · Graph Theory / Financial Crime Detection Track
 
@@ -15,7 +15,7 @@ A graph-theoretic fraud detection engine that identifies money muling rings, smu
 ## 📁 Project Structure
 
 ```
-rift2026/
+protex2026/
 │
 ├── app.py                        # Flask app — all routes
 ├── requirements.txt              # Python dependencies
@@ -329,7 +329,7 @@ Download a JSON report file.
 
 | Role | Name |
 |---|---|
-| Team Leader | Fahad Afzal Hussain |
+| Team Leader | Aditya Ranjan |
 | Member | Aryan Gambheer |
 | Member | Saurabh Yadav |
-| Member | Aditya Ranjan |
+| Member | Fahad Afzal Hussain  |
