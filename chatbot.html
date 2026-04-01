@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RIFT — AI Fraud Analyst</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #080b10;
+    --surface: #0e1318;
+    --surface2: #141b22;
+    --border: #1e2d3d;
+    --accent: #00e5ff;
+    --accent2: #ff4d6d;
+    --warn: #ffb347;
+    --ok: #39ff6e;
+    --text: #d0dce8;
+    --muted: #5a7a94;
+    --font-mono: 'Space Mono', monospace;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), #0090a8);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 13px;
+    color: #000;
+    letter-spacing: -1px;
+  }
+
+  .header-text h1 {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .header-text p {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+
+  .status-dot {
+    margin-left: auto;
+    display: flex; align-items: center; gap: 7px;
+    font-size: 11px; color: var(--muted);
+  }
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 6px var(--ok);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; } 50% { opacity: 0.4; }
+  }
+
+  /* ── Layout ── */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 260px;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+
+  .sidebar-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .quick-btn {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 12px;
+    padding: 9px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: left;
+    margin-bottom: 6px;
+    transition: all 0.2s;
+    line-height: 1.4;
+  }
+  .quick-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,229,255,0.05);
+  }
+  .quick-btn .qb-tag {
+    display: inline-block;
+    font-size: 9px;
+    padding: 2px 5px;
+    border-radius: 3px;
+    margin-right: 6px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    vertical-align: middle;
+  }
+  .tag-red { background: rgba(255,77,109,0.2); color: var(--accent2); }
+  .tag-yellow { background: rgba(255,179,71,0.2); color: var(--warn); }
+  .tag-green { background: rgba(57,255,110,0.2); color: var(--ok); }
+
+  /* Context panel */
+  #context-panel {
+    padding: 14px 16px;
+    flex: 1;
+  }
+  #context-panel .sidebar-label { margin-bottom: 8px; }
+
+  .ctx-row {
+    display: flex; justify-content: space-between;
+    font-size: 11px; margin-bottom: 6px; color: var(--muted);
+  }
+  .ctx-row span:last-child { color: var(--text); font-weight: 500; }
+
+  .score-bar-wrap {
+    background: var(--surface2);
+    border-radius: 4px;
+    height: 4px;
+    margin-top: 2px;
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+  .score-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+  }
+
+  /* ── Chat area ── */
+  .chat-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    scroll-behavior: smooth;
+  }
+
+  #messages::-webkit-scrollbar { width: 4px; }
+  #messages::-webkit-scrollbar-track { background: transparent; }
+  #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* Message bubbles */
+  .msg {
+    display: flex;
+    gap: 12px;
+    max-width: 820px;
+    animation: fadeUp 0.3s ease;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+
+  .avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+  }
+  .bot-av { background: linear-gradient(135deg, #003a4a, #006980); color: var(--accent); border: 1px solid var(--accent); }
+  .user-av { background: linear-gradient(135deg, #2d0a15, #6b0020); color: var(--accent2); border: 1px solid var(--accent2); }
+
+  .bubble {
+    padding: 14px 16px;
+    border-radius: 12px;
+    font-size: 13.5px;
+    line-height: 1.65;
+    max-width: 680px;
+  }
+  .bot-bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top-left-radius: 4px;
+    color: var(--text);
+  }
+  .user-bubble {
+    background: rgba(255,77,109,0.1);
+    border: 1px solid rgba(255,77,109,0.25);
+    border-top-right-radius: 4px;
+    color: var(--text);
+  }
+
+  /* Rich content inside bubbles */
+  .risk-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px; border-radius: 20px;
+    font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+    margin: 2px 4px;
+  }
+  .risk-high { background: rgba(255,77,109,0.15); color: var(--accent2); border: 1px solid rgba(255,77,109,0.3); }
+  .risk-med  { background: rgba(255,179,71,0.15); color: var(--warn);    border: 1px solid rgba(255,179,71,0.3); }
+  .risk-low  { background: rgba(57,255,110,0.15); color: var(--ok);      border: 1px solid rgba(57,255,110,0.3); }
+
+  .acc-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin: 10px 0;
+  }
+  .acc-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .acc-id {
+    font-family: var(--font-mono); font-size: 13px; font-weight: 700;
+    color: var(--accent);
+  }
+  .acc-score-bar {
+    height: 4px; border-radius: 4px; margin: 6px 0 8px;
+    transition: width 0.5s;
+  }
+  .acc-detail-row {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;
+  }
+  .acc-chip {
+    font-size: 11px; padding: 3px 8px; border-radius: 4px;
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .pattern-tag {
+    font-size: 10px; padding: 2px 7px; border-radius: 4px;
+    font-family: var(--font-mono);
+    background: rgba(0,229,255,0.08); color: var(--accent);
+    border: 1px solid rgba(0,229,255,0.2);
+    display: inline-block; margin: 2px 2px 0 0;
+  }
+
+  .summary-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+    margin: 10px 0;
+  }
+  .stat-box {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px;
+    text-align: center;
+  }
+  .stat-num {
+    font-family: var(--font-mono); font-size: 22px; font-weight: 700;
+    color: var(--accent);
+  }
+  .stat-num.red { color: var(--accent2); }
+  .stat-num.yellow { color: var(--warn); }
+  .stat-num.green { color: var(--ok); }
+  .stat-label { font-size: 10px; color: var(--muted); margin-top: 2px; letter-spacing: 0.5px; }
+
+  .explanation-block {
+    background: rgba(0,229,255,0.04);
+    border-left: 3px solid var(--accent);
+    padding: 10px 14px;
+    border-radius: 0 6px 6px 0;
+    margin: 10px 0;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .warn-block {
+    background: rgba(255,179,71,0.06);
+    border-left: 3px solid var(--warn);
+    padding: 10px 14px;
+    border-radius: 0 6px 6px 0;
+    margin: 10px 0;
+    font-size: 13px;
+    color: var(--warn);
+  }
+
+  .typing {
+    display: flex; gap: 5px; align-items: center; padding: 4px 0;
+  }
+  .typing span {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent); opacity: 0.4;
+    animation: blink 1.2s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,100%{opacity:0.2} 50%{opacity:1} }
+
+  /* ── Input area ── */
+  .input-area {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .input-row {
+    display: flex; gap: 10px; align-items: flex-end;
+  }
+
+  #user-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    resize: none;
+    outline: none;
+    line-height: 1.5;
+    max-height: 120px;
+    transition: border-color 0.2s;
+  }
+  #user-input:focus { border-color: var(--accent); }
+  #user-input::placeholder { color: var(--muted); }
+
+  #send-btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    width: 42px; height: 42px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    font-weight: 700;
+  }
+  #send-btn:hover { background: #00cfeb; transform: scale(1.05); }
+  #send-btn:disabled { background: var(--border); cursor: not-allowed; transform: none; }
+
+  .hint-row {
+    display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;
+  }
+  .hint-chip {
+    font-size: 11px; padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 20px; color: var(--muted);
+    cursor: pointer; transition: all 0.15s;
+    background: transparent;
+    font-family: var(--font-body);
+  }
+  .hint-chip:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,229,255,0.05); }
+
+  /* upload area */
+  .upload-zone {
+    border: 1.5px dashed var(--border);
+    border-radius: 8px; padding: 12px;
+    text-align: center; cursor: pointer;
+    color: var(--muted); font-size: 12px;
+    transition: all 0.2s;
+    margin-bottom: 10px;
+  }
+  .upload-zone:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,229,255,0.03); }
+  .upload-zone input { display: none; }
+
+  /* scroll to bottom fab */
+  #scroll-fab {
+    position: fixed;
+    bottom: 110px; right: 30px;
+    background: var(--accent);
+    color: #000;
+    border: none; border-radius: 50%;
+    width: 36px; height: 36px;
+    font-size: 16px;
+    cursor: pointer;
+    display: none;
+    align-items: center; justify-content: center;
+    box-shadow: 0 4px 14px rgba(0,229,255,0.4);
+    z-index: 10;
+  }
+
+  /* hr divider */
+  .bubble hr { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+  .bubble b { color: #e0eaf4; }
+  .bubble code {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    background: rgba(0,229,255,0.08);
+    border: 1px solid rgba(0,229,255,0.15);
+    padding: 1px 5px; border-radius: 3px;
+    color: var(--accent);
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo-icon">RIFT</div>
+  <div class="header-text">
+    <h1>Fraud Analyst AI</h1>
+    <p>Money Muling Detection · Graph Intelligence System</p>
+  </div>
+  <div class="status-dot"><div class="dot"></div>Online</div>
+</header>
+
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Quick Queries</div>
+
+      <button class="quick-btn" onclick="quickSend('Show me all high risk accounts')">
+        <span class="qb-tag tag-red">HIGH</span>Show all high-risk accounts
+      </button>
+      <button class="quick-btn" onclick="quickSend('Show me medium risk accounts')">
+        <span class="qb-tag tag-yellow">MED</span>Show medium-risk accounts
+      </button>
+      <button class="quick-btn" onclick="quickSend('Show me all safe normal accounts')">
+        <span class="qb-tag tag-green">SAFE</span>Show normal / safe accounts
+      </button>
+      <button class="quick-btn" onclick="quickSend('Give me a full summary of the analysis')">
+        📊 Full analysis summary
+      </button>
+      <button class="quick-btn" onclick="quickSend('What fraud rings were detected?')">
+        🔗 Detected fraud rings
+      </button>
+      <button class="quick-btn" onclick="quickSend('Explain how suspicion scoring works')">
+        🧠 How scoring works
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Upload CSV</div>
+      <label class="upload-zone">
+        <input type="file" id="csv-file" accept=".csv" onchange="uploadCSV(this)" />
+        📂 Click to upload transaction CSV
+      </label>
+      <div id="upload-status" style="font-size:11px;color:var(--muted);text-align:center;"></div>
+    </div>
+
+    <div id="context-panel">
+      <div class="sidebar-label">Analysis Context</div>
+      <div id="ctx-content">
+        <div style="font-size:12px;color:var(--muted);line-height:1.6;">
+          Upload a CSV file to load analysis data, or ask a question about money muling detection concepts.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="chat-wrap">
+    <div id="messages">
+      <!-- Welcome message -->
+      <div class="msg bot">
+        <div class="avatar bot-av">AI</div>
+        <div class="bubble bot-bubble">
+          <b>👋 Hello! I'm the RIFT Fraud Analyst AI.</b><br><br>
+          I can help you understand your transaction analysis results. Here's what I can do:
+          <div class="explanation-block" style="margin-top:12px;">
+            📊 <b>Summarize</b> the full analysis — total accounts, suspicious flagged, fraud rings<br>
+            🔴 <b>List high-risk accounts</b> (score 75–100) with explanation<br>
+            🟡 <b>List medium-risk accounts</b> (score 40–74)<br>
+            🟢 <b>List safe/normal accounts</b> (score below 40)<br>
+            🔗 <b>Explain fraud rings</b> — circular routing, smurfing, layering<br>
+            🧠 <b>Deep-dive</b> into any specific account — just type its ID
+          </div>
+          <b>To get started:</b> Upload a CSV file using the sidebar, or ask me anything about the detection algorithms.
+        </div>
+      </div>
+    </div>
+
+    <button id="scroll-fab" onclick="scrollToBottom()">↓</button>
+
+    <div class="input-area">
+      <label class="upload-zone" style="margin-bottom:8px;" for="csv-file2">
+        <input type="file" id="csv-file2" accept=".csv" onchange="uploadCSV(this)" />
+        📂 Drop or click to upload transaction CSV here
+      </label>
+
+      <div class="input-row">
+        <textarea
+          id="user-input"
+          rows="1"
+          placeholder="Ask about accounts, fraud rings, risk scores..."
+          onkeydown="handleKey(event)"
+          oninput="autoResize(this)"
+        ></textarea>
+        <button id="send-btn" onclick="sendMessage()" title="Send">➤</button>
+      </div>
+
+      <div class="hint-row">
+        <button class="hint-chip" onclick="quickSend('Explain what smurfing is')">What is smurfing?</button>
+        <button class="hint-chip" onclick="quickSend('What is layering in money laundering?')">What is layering?</button>
+        <button class="hint-chip" onclick="quickSend('How is the suspicion score calculated?')">Suspicion score formula</button>
+        <button class="hint-chip" onclick="quickSend('What patterns does RIFT detect?')">Detection patterns</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────
+let analysisData = null; // holds the result from /analyze API
+
+// ─────────────────────────────────────────────
+// Upload CSV → call /analyze
+// ─────────────────────────────────────────────
+async function uploadCSV(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  document.getElementById('upload-status').textContent = '⏳ Analyzing...';
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  addBotMsg(`<div class="explanation-block">📂 Uploading <b>${file.name}</b> for analysis... please wait.</div>`);
+  scrollToBottom();
+
+  try {
+    const res = await fetch('/analyze', { method: 'POST', body: formData });
+    const json = await res.json();
+
+    if (json.status !== 'ok') {
+      addBotMsg(`<div class="warn-block">❌ <b>Error:</b> ${json.message}</div>`);
+      document.getElementById('upload-status').textContent = '❌ Failed';
+      return;
+    }
+
+    analysisData = json.data;
+    document.getElementById('upload-status').textContent = '✅ Loaded';
+    updateContextPanel();
+    addBotMsg(buildSummaryMsg());
+  } catch (e) {
+    addBotMsg(`<div class="warn-block">❌ Could not reach the server. Make sure Flask is running.</div>`);
+    document.getElementById('upload-status').textContent = '❌ Error';
+  }
+}
+
+// ─────────────────────────────────────────────
+// Context panel update
+// ─────────────────────────────────────────────
+function updateContextPanel() {
+  if (!analysisData) return;
+  const s = analysisData.summary;
+  const highRisk = (analysisData.suspicious_accounts || []).filter(a => a.suspicion_score >= 75).length;
+  const medRisk  = (analysisData.suspicious_accounts || []).filter(a => a.suspicion_score >= 40 && a.suspicion_score < 75).length;
+
+  document.getElementById('ctx-content').innerHTML = `
+    <div class="ctx-row"><span>Total Accounts</span><span>${s.total_accounts_analyzed}</span></div>
+    <div class="ctx-row"><span>Transactions</span><span>${s.total_transactions}</span></div>
+    <hr style="border-color:var(--border);margin:6px 0"/>
+    <div class="ctx-row"><span>🔴 High Risk</span><span style="color:var(--accent2)">${highRisk}</span></div>
+    <div class="score-bar-wrap"><div class="score-bar" style="width:${Math.min(100,(highRisk/s.total_accounts_analyzed)*100*8)}%;background:var(--accent2)"></div></div>
+    <div class="ctx-row"><span>🟡 Medium Risk</span><span style="color:var(--warn)">${medRisk}</span></div>
+    <div class="score-bar-wrap"><div class="score-bar" style="width:${Math.min(100,(medRisk/s.total_accounts_analyzed)*100*8)}%;background:var(--warn)"></div></div>
+    <div class="ctx-row"><span>🟢 Normal</span><span style="color:var(--ok)">${s.total_accounts_analyzed - s.suspicious_accounts_flagged}</span></div>
+    <div class="score-bar-wrap"><div class="score-bar" style="width:${Math.min(100,((s.total_accounts_analyzed-s.suspicious_accounts_flagged)/s.total_accounts_analyzed)*100)}%;background:var(--ok)"></div></div>
+    <hr style="border-color:var(--border);margin:8px 0"/>
+    <div class="ctx-row"><span>Fraud Rings</span><span>${s.fraud_rings_detected}</span></div>
+    <div class="ctx-row"><span>Process Time</span><span>${s.processing_time_seconds?.toFixed(2)}s</span></div>
+  `;
+}
+
+// ─────────────────────────────────────────────
+// Send message
+// ─────────────────────────────────────────────
+function sendMessage() {
+  const inp = document.getElementById('user-input');
+  const text = inp.value.trim();
+  if (!text) return;
+
+  addUserMsg(text);
+  inp.value = '';
+  inp.style.height = '';
+  showTyping();
+
+  setTimeout(() => {
+    removeTyping();
+    const response = generateResponse(text);
+    addBotMsg(response);
+    scrollToBottom();
+  }, 650);
+}
+
+function quickSend(text) {
+  document.getElementById('user-input').value = text;
+  sendMessage();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// ─────────────────────────────────────────────
+// Response Generator
+// ─────────────────────────────────────────────
+function generateResponse(text) {
+  const q = text.toLowerCase();
+
+  // No data loaded — only conceptual questions allowed
+  if (!analysisData) {
+    return handleConceptualQuestion(q, text) ||
+      `<div class="warn-block">⚠️ No analysis data loaded yet. Please upload a CSV file first, then I can answer questions about specific accounts and results.</div>
+       <br>In the meantime, I can answer conceptual questions like:<br>
+       <button class="hint-chip" style="margin:4px 2px" onclick="quickSend('What is smurfing?')">What is smurfing?</button>
+       <button class="hint-chip" style="margin:4px 2px" onclick="quickSend('Explain the suspicion score')">How is the score calculated?</button>`;
+  }
+
+  // Specific account lookup
+  const accMatch = text.match(/\b(ACC_\w+|\w{3,}_\d{3,})\b/i);
+  if (accMatch) return buildAccountDetail(accMatch[0]);
+
+  // High risk
+  if (q.includes('high risk') || q.includes('high-risk') || (q.includes('suspicious') && !q.includes('how'))) {
+    return buildRiskList('high');
+  }
+  // Medium risk
+  if (q.includes('medium') || q.includes('moderate') || q.includes('med risk')) {
+    return buildRiskList('medium');
+  }
+  // Safe / normal
+  if (q.includes('safe') || q.includes('normal') || q.includes('low risk') || q.includes('clean')) {
+    return buildRiskList('low');
+  }
+  // Summary
+  if (q.includes('summary') || q.includes('overview') || q.includes('total') || q.includes('overall')) {
+    return buildSummaryMsg();
+  }
+  // Fraud rings
+  if (q.includes('ring') || q.includes('cycle') || q.includes('circular')) {
+    return buildRingsMsg();
+  }
+  // All accounts
+  if (q.includes('all account') || q.includes('list account') || q.includes('every account')) {
+    return buildAllAccounts();
+  }
+  // Top accounts
+  if (q.includes('top') || q.includes('most suspicious') || q.includes('worst')) {
+    return buildTopAccounts();
+  }
+
+  // Conceptual
+  const conceptual = handleConceptualQuestion(q, text);
+  if (conceptual) return conceptual;
+
+  // Fallback
+  return `I couldn't find a specific match for <b>"${text}"</b>. Here are some things you can ask:
+    <div class="explanation-block" style="margin-top:10px;">
+      • <b>Account lookup:</b> Type an account ID like <code>ACC_00123</code><br>
+      • <b>Risk lists:</b> "Show high risk accounts" / "Show safe accounts"<br>
+      • <b>Summary:</b> "Give me a full summary"<br>
+      • <b>Rings:</b> "What fraud rings were detected?"<br>
+      • <b>Concepts:</b> "Explain smurfing" / "How is the score calculated?"
+    </div>`;
+}
+
+// ─────────────────────────────────────────────
+// Builders
+// ─────────────────────────────────────────────
+function buildSummaryMsg() {
+  const s = analysisData.summary;
+  const accounts = analysisData.suspicious_accounts || [];
+  const highRisk = accounts.filter(a => a.suspicion_score >= 75).length;
+  const medRisk  = accounts.filter(a => a.suspicion_score >= 40 && a.suspicion_score < 75).length;
+  const normal   = s.total_accounts_analyzed - s.suspicious_accounts_flagged;
+
+  return `
+    <b>📊 Analysis Summary</b>
+    <div class="summary-grid" style="margin-top:12px;">
+      <div class="stat-box"><div class="stat-num">${s.total_accounts_analyzed}</div><div class="stat-label">Total Accounts</div></div>
+      <div class="stat-box"><div class="stat-num">${s.total_transactions}</div><div class="stat-label">Total Transactions</div></div>
+      <div class="stat-box"><div class="stat-num red">${highRisk}</div><div class="stat-label">🔴 High Risk</div></div>
+      <div class="stat-box"><div class="stat-num yellow">${medRisk}</div><div class="stat-label">🟡 Medium Risk</div></div>
+      <div class="stat-box"><div class="stat-num green">${normal}</div><div class="stat-label">🟢 Normal</div></div>
+      <div class="stat-box"><div class="stat-num">${s.fraud_rings_detected}</div><div class="stat-label">Fraud Rings</div></div>
+    </div>
+    <hr/>
+    <b>Pattern Breakdown:</b><br>
+    <span class="pattern-tag">CYCLE RINGS</span> ${s.cycle_rings || 0} &nbsp;
+    <span class="pattern-tag">SMURFING</span> ${s.smurfing_rings || 0} &nbsp;
+    <span class="pattern-tag">LAYERING</span> ${s.layering_rings || 0} &nbsp;
+    <span class="pattern-tag">HUB NODES</span> ${s.hub_nodes || 0}
+    <br><br>
+    <span style="color:var(--muted);font-size:12px;">⏱ Processed in ${s.processing_time_seconds?.toFixed(2)}s · Whitelisted: ${s.whitelisted_nodes || 0} nodes</span>
+    <br><br>Type <b>"show high risk accounts"</b> to see flagged accounts, or ask about a specific account ID.
+  `;
+}
+
+function buildRiskList(tier) {
+  const accounts = analysisData.suspicious_accounts || [];
+  let filtered, title, emptyMsg;
+
+  if (tier === 'high') {
+    filtered = accounts.filter(a => a.suspicion_score >= 75).sort((a,b) => b.suspicion_score - a.suspicion_score);
+    title = '🔴 High Risk Accounts (Score 75–100)';
+    emptyMsg = 'No high-risk accounts detected in this dataset.';
+  } else if (tier === 'medium') {
+    filtered = accounts.filter(a => a.suspicion_score >= 40 && a.suspicion_score < 75).sort((a,b) => b.suspicion_score - a.suspicion_score);
+    title = '🟡 Medium Risk Accounts (Score 40–74)';
+    emptyMsg = 'No medium-risk accounts detected.';
+  } else {
+    // "low" = all accounts NOT in suspicious list + suspicious with score < 40
+    const suspiciousIds = new Set(accounts.map(a => a.account_id));
+    // Build list of normal accounts from graph nodes if available
+    const allNodes = analysisData.graph?.nodes || [];
+    const normalNodes = allNodes
+      .filter(n => !suspiciousIds.has(n.id) || (suspiciousIds.has(n.id) && accounts.find(a=>a.account_id===n.id)?.suspicion_score < 40))
+      .slice(0, 30);
+    if (normalNodes.length === 0) {
+      return `<b>🟢 Normal / Safe Accounts</b><br><br><div class="explanation-block">All non-suspicious accounts are considered <b>normal</b> (score below 40). There are <b>${analysisData.summary.total_accounts_analyzed - accounts.length}</b> such accounts in this dataset. They show no patterns of fraud rings, smurfing, or layering behavior.</div>`;
+    }
+    let html = `<b>🟢 Normal / Safe Accounts</b> (sample, score &lt; 40)<br><br>`;
+    normalNodes.forEach(n => {
+      html += `<span class="pattern-tag" style="background:rgba(57,255,110,0.08);color:var(--ok);border-color:rgba(57,255,110,0.2)">${n.id}</span>`;
+    });
+    html += `<br><br><span style="color:var(--muted);font-size:12px;">Showing first ${normalNodes.length} of ${analysisData.summary.total_accounts_analyzed - accounts.length} normal accounts.</span>`;
+    return html;
+  }
+
+  if (filtered.length === 0) return `<b>${title}</b><br><br><div class="explanation-block">${emptyMsg}</div>`;
+
+  let html = `<b>${title}</b> — ${filtered.length} account(s) found<br><br>`;
+  filtered.slice(0, 15).forEach(acc => {
+    html += buildAccCard(acc);
+  });
+  if (filtered.length > 15) html += `<span style="color:var(--muted);font-size:12px;">...and ${filtered.length - 15} more. Ask about a specific account ID for details.</span>`;
+  return html;
+}
+
+function buildAccCard(acc) {
+  const score = acc.suspicion_score || 0;
+  let tierClass, tierLabel, barColor;
+  if (score >= 75) { tierClass='risk-high'; tierLabel='HIGH RISK'; barColor='var(--accent2)'; }
+  else if (score >= 40) { tierClass='risk-med'; tierLabel='MEDIUM RISK'; barColor='var(--warn)'; }
+  else { tierClass='risk-low'; tierLabel='LOW RISK'; barColor='var(--ok)'; }
+
+  const patterns = (acc.detected_patterns || []).map(p => `<span class="pattern-tag">${p.replace(/_/g,' ').toUpperCase()}</span>`).join('');
+
+  return `
+    <div class="acc-card">
+      <div class="acc-card-header">
+        <span class="acc-id">${acc.account_id}</span>
+        <span class="risk-badge ${tierClass}">${tierLabel}</span>
+      </div>
+      <div class="acc-score-bar" style="background:var(--border)">
+        <div style="height:4px;border-radius:4px;width:${score}%;background:${barColor};transition:width 0.5s"></div>
+      </div>
+      <div class="acc-detail-row">
+        <span class="acc-chip">Score: <b style="color:${barColor}">${score.toFixed(1)}</b></span>
+        ${acc.ring_id ? `<span class="acc-chip">Ring: ${acc.ring_id}</span>` : ''}
+        <span class="acc-chip" style="cursor:pointer;color:var(--accent)" onclick="quickSend('Explain account ${acc.account_id}')">🔍 Details</span>
+      </div>
+      ${patterns ? `<div style="margin-top:8px">${patterns}</div>` : ''}
+    </div>
+  `;
+}
+
+function buildAccountDetail(accountId) {
+  const accounts = analysisData.suspicious_accounts || [];
+  const acc = accounts.find(a => a.account_id.toLowerCase() === accountId.toLowerCase());
+
+  if (!acc) {
+    return `<div class="explanation-block">
+      <b>Account <code>${accountId}</code></b> — No suspicious activity detected.<br><br>
+      This account is considered <span class="risk-badge risk-low" style="font-size:10px">NORMAL</span> — it did not trigger any of the four detection algorithms (cycle detection, smurfing, layering, or hub node analysis).
+    </div>`;
+  }
+
+  const score = acc.suspicion_score || 0;
+  let tierClass, tierLabel, barColor;
+  if (score >= 75) { tierClass='risk-high'; tierLabel='HIGH RISK'; barColor='var(--accent2)'; }
+  else if (score >= 40) { tierClass='risk-med'; tierLabel='MEDIUM RISK'; barColor='var(--warn)'; }
+  else { tierClass='risk-low'; tierLabel='LOW RISK'; barColor='var(--ok)'; }
+
+  const patternExplanations = {
+    'cycle_scc_3': '🔄 <b>Fraud Ring (Cycle):</b> This account is part of a circular transaction loop (A→B→C→A). This pattern is used to make illicit funds appear legitimate by cycling them through multiple accounts.',
+    'smurfing_fan_in': '📥 <b>Smurfing (Fan-In):</b> Multiple senders (5+) sent money to this account within 72 hours. This is a classic structuring technique to avoid large-transaction reporting thresholds.',
+    'smurfing_fan_out': '📤 <b>Smurfing (Fan-Out):</b> This account sent money to 5+ unique receivers within 72 hours. This dispersal pattern is used to obscure the origin of funds.',
+    'layering_chain': '🧅 <b>Layering:</b> This account is part of a multi-hop chain through shell accounts (accounts with ≤3 transactions). This obscures the money trail.',
+    'high_degree_hub': '🌐 <b>Hub Node:</b> This account is in the top 5% by transaction degree (in+out connections). It may be a central node coordinating money flow.',
+  };
+
+  const patterns = acc.detected_patterns || [];
+  const explanationHTML = patterns.map(p => {
+    const key = Object.keys(patternExplanations).find(k => p.includes(k.split('_')[0]) && p.includes(k.split('_')[1] || ''));
+    return `<div class="explanation-block" style="margin:6px 0">${patternExplanations[p] || patternExplanations[key] || `<b>${p}:</b> Suspicious pattern detected.`}</div>`;
+  }).join('');
+
+  return `
+    <b>🔍 Account Detail: <code>${acc.account_id}</code></b>
+    <div class="acc-card" style="margin-top:12px">
+      <div class="acc-card-header">
+        <span class="acc-id">${acc.account_id}</span>
+        <span class="risk-badge ${tierClass}">${tierLabel}</span>
+      </div>
+      <div class="acc-score-bar" style="background:var(--border)">
+        <div style="height:4px;border-radius:4px;width:${score}%;background:${barColor}"></div>
+      </div>
+      <div style="font-size:13px;margin-top:4px;color:var(--muted)">Suspicion Score: <b style="color:${barColor};font-size:16px">${score.toFixed(1)}</b> / 100</div>
+      ${acc.ring_id ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">Associated Ring: <code>${acc.ring_id}</code></div>` : ''}
+    </div>
+    <br><b>⚠️ Why is this account flagged?</b><br>
+    ${explanationHTML || '<div class="warn-block">Pattern details not available for this account.</div>'}
+    <br><b>💡 Recommendation:</b>
+    <div class="explanation-block">
+      ${score >= 75
+        ? '🔴 <b>Immediate review required.</b> Freeze transactions pending investigation. File a Suspicious Activity Report (SAR) if warranted. Cross-check counterparty accounts.'
+        : score >= 40
+        ? '🟡 <b>Enhanced monitoring recommended.</b> Flag for manual review in the next compliance cycle. Watch for escalation of patterns.'
+        : '🟢 <b>No immediate action needed.</b> Continue routine monitoring.'
+      }
+    </div>
+  `;
+}
+
+function buildRingsMsg() {
+  const rings = analysisData.fraud_rings || [];
+  if (rings.length === 0) return `<div class="explanation-block">No fraud rings detected in this dataset.</div>`;
+
+  let html = `<b>🔗 Detected Fraud Rings</b> — ${rings.length} ring(s)<br><br>`;
+  rings.slice(0, 10).forEach((ring, i) => {
+    html += `
+      <div class="acc-card" style="margin-bottom:10px">
+        <div class="acc-card-header">
+          <span class="acc-id">${ring.ring_id || `RING_${String(i+1).padStart(3,'0')}`}</span>
+          <span class="risk-badge risk-high">Score: ${(ring.risk_score || 0).toFixed(0)}</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Type: <span class="pattern-tag">${(ring.pattern_type || 'unknown').toUpperCase()}</span></div>
+        <div style="font-size:12px;color:var(--muted)">Members:</div>
+        <div style="margin-top:4px">${(ring.member_accounts || []).map(a => `<span class="pattern-tag" style="cursor:pointer" onclick="quickSend('Explain account ${a}')">${a}</span>`).join(' ')}</div>
+      </div>`;
+  });
+  if (rings.length > 10) html += `<span style="color:var(--muted);font-size:12px;">...and ${rings.length - 10} more rings.</span>`;
+  return html;
+}
+
+function buildTopAccounts() {
+  const accounts = (analysisData.suspicious_accounts || []).sort((a,b) => b.suspicion_score - a.suspicion_score).slice(0,10);
+  if (accounts.length === 0) return `<div class="explanation-block">No suspicious accounts found in this dataset.</div>`;
+
+  let html = `<b>🏴 Top ${accounts.length} Most Suspicious Accounts</b><br><br>`;
+  accounts.forEach(acc => { html += buildAccCard(acc); });
+  return html;
+}
+
+function buildAllAccounts() {
+  const accounts = analysisData.suspicious_accounts || [];
+  const s = analysisData.summary;
+  return `
+    <b>📋 All Flagged Accounts</b> — ${accounts.length} of ${s.total_accounts_analyzed} total<br><br>
+    ${buildRiskList('high')}
+    <hr style="margin:16px 0;border-color:var(--border)"/>
+    ${buildRiskList('medium')}
+  `;
+}
+
+// ─────────────────────────────────────────────
+// Conceptual Q&A (works without data)
+// ─────────────────────────────────────────────
+function handleConceptualQuestion(q, text) {
+  if (q.includes('smurf') || q.includes('fan-in') || q.includes('fan-out')) {
+    return `<b>🧮 What is Smurfing?</b>
+    <div class="explanation-block">
+      <b>Smurfing</b> (also called structuring) is a money laundering technique where large sums are broken into smaller transactions to avoid detection thresholds (e.g. ₹50,000 reporting limits).<br><br>
+      RIFT detects two smurfing patterns:<br><br>
+      📥 <b>Fan-In:</b> 5+ unique senders → 1 receiver within 72 hours.<br>
+      The receiver is collecting fragmented payments that collectively represent a larger amount.<br><br>
+      📤 <b>Fan-Out:</b> 1 sender → 5+ unique receivers within 72 hours.<br>
+      The sender is dispersing funds to hide their origin.<br><br>
+      Score contribution: <code>+25 points</code>
+    </div>`;
+  }
+
+  if (q.includes('layer') || q.includes('shell')) {
+    return `<b>🧅 What is Layering?</b>
+    <div class="explanation-block">
+      <b>Layering</b> is the second stage of money laundering — after placement (introducing dirty money) and before integration (spending it). The goal is to create a complex trail of transactions that obscures the money's origin.<br><br>
+      RIFT detects layering by finding BFS chains of 3+ hops through <b>shell accounts</b> (accounts with ≤3 total transactions). These thin accounts exist only to pass money through.<br><br>
+      Example: <code>ACC_001 → ACC_Shell1 → ACC_Shell2 → ACC_003</code><br><br>
+      Score contribution: <code>+20 points</code>
+    </div>`;
+  }
+
+  if (q.includes('cycle') || q.includes('circular') || q.includes('scc') || q.includes('ring')) {
+    return `<b>🔄 What is Circular Fund Routing?</b>
+    <div class="explanation-block">
+      A <b>fraud ring</b> occurs when money flows in a circle: A→B→C→A. This makes it appear that money is being "earned" through legitimate transactions when it's actually cycling between controlled accounts.<br><br>
+      RIFT uses <b>Tarjan's Strongly Connected Components (SCC)</b> algorithm — any SCC with 3+ nodes is flagged as a fraud ring. SCC runs in O(V+E) time, making it extremely fast even for large graphs.<br><br>
+      Score contribution: <code>+35 points</code> (highest weight — most definitive indicator)
+    </div>`;
+  }
+
+  if (q.includes('hub') || q.includes('degree') || q.includes('95th')) {
+    return `<b>🌐 What is Hub Node Analysis?</b>
+    <div class="explanation-block">
+      <b>Hub nodes</b> are accounts with unusually high transaction counts — they sit at the center of many financial flows, which can indicate they're coordinating money laundering.<br><br>
+      RIFT flags accounts whose combined in+out degree is at or above the <b>95th percentile</b> across the entire graph.<br><br>
+      To avoid false positives, legitimate high-volume merchants are <b>whitelisted</b> before this check runs (degree ≥ 200 AND unique partner ratio ≥ 60%).<br><br>
+      Score contribution: <code>+20 points</code>
+    </div>`;
+  }
+
+  if (q.includes('score') || q.includes('formula') || q.includes('calcul') || q.includes('how') && q.includes('suspi')) {
+    return `<b>🧮 Suspicion Score Formula</b>
+    <div class="explanation-block">
+      Each account gets a score from <b>0 to 100</b>:<br><br>
+      <code>score = pattern_contributions + activity_boost</code><br>
+      <code>activity_boost = log(degree + 1) × 2 + log(total_flow / 1000 + 1)</code><br>
+      <code>final_score = min(100, score)</code><br><br>
+      <b>Pattern weights:</b><br>
+      • Fraud Ring (Cycle/SCC): <code>+35</code><br>
+      • Smurfing (Fan-In/Out): <code>+25</code><br>
+      • Layering Chain: <code>+20</code><br>
+      • High-Degree Hub: <code>+20</code><br><br>
+      <b>Risk tiers:</b><br>
+      🔴 75–100 = High Risk &nbsp; 🟡 40–74 = Medium Risk &nbsp; 🟢 0–39 = Normal
+    </div>`;
+  }
+
+  if (q.includes('whitelist') || q.includes('false positive') || q.includes('legitimate')) {
+    return `<b>🛡️ False Positive Control & Whitelisting</b>
+    <div class="explanation-block">
+      To prevent legitimate high-volume businesses (payroll processors, merchants) from being flagged, RIFT automatically <b>whitelists</b> accounts that meet both:<br><br>
+      • Total degree (in + out) ≥ <code>200</code><br>
+      • Unique partner ratio ≥ <code>60%</code> (many different counterparties = diverse, legitimate business)<br><br>
+      Whitelisted accounts are excluded from <b>all four detection algorithms</b>.
+    </div>`;
+  }
+
+  if (q.includes('csv') || q.includes('column') || q.includes('format') || q.includes('input')) {
+    return `<b>📥 CSV Input Format</b>
+    <div class="explanation-block">
+      Your CSV must have exactly these 5 columns:<br><br>
+      • <code>transaction_id</code> — unique string (e.g. TXN_001)<br>
+      • <code>sender_id</code> — account string (e.g. ACC_00123)<br>
+      • <code>receiver_id</code> — account string<br>
+      • <code>amount</code> — positive float (e.g. 1500.00)<br>
+      • <code>timestamp</code> — format: <code>YYYY-MM-DD HH:MM:SS</code><br><br>
+      The engine auto-removes duplicates, negative amounts, and self-loops.
+    </div>`;
+  }
+
+  if (q.includes('what is rift') || q.includes('about') || q.includes('how does it work') || q.includes('explain the system')) {
+    return `<b>🏆 RIFT — Graph-Based Money Muling Detection</b>
+    <div class="explanation-block">
+      RIFT is a <b>graph-theoretic fraud detection engine</b> that models bank transactions as a directed graph (nodes = accounts, edges = transactions) and runs 4 specialized algorithms to detect suspicious patterns.<br><br>
+      <b>Detection Pipeline:</b><br>
+      1️⃣ CSV uploaded → schema validated<br>
+      2️⃣ Directed graph built with NetworkX<br>
+      3️⃣ Whitelist computed (exclude legitimate merchants)<br>
+      4️⃣ Four algorithms run in parallel<br>
+      5️⃣ Suspicion scores calculated (0–100)<br>
+      6️⃣ Results returned as JSON + interactive dashboard<br><br>
+      Built for RIFT 2026 Hackathon by Fahad Afzal, Aryan Gambheer, Saurabh Yadav & Aditya Ranjan.
+    </div>`;
+  }
+
+  return null;
+}
+
+// ─────────────────────────────────────────────
+// UI Helpers
+// ─────────────────────────────────────────────
+function addUserMsg(text) {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg user';
+  div.innerHTML = `<div class="avatar user-av">YOU</div><div class="bubble user-bubble">${escHtml(text)}</div>`;
+  msgs.appendChild(div);
+  scrollToBottom();
+}
+
+function addBotMsg(html) {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg bot';
+  div.innerHTML = `<div class="avatar bot-av">AI</div><div class="bubble bot-bubble">${html}</div>`;
+  msgs.appendChild(div);
+  scrollToBottom();
+}
+
+function showTyping() {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.id = 'typing-indicator';
+  div.className = 'msg bot';
+  div.innerHTML = `<div class="avatar bot-av">AI</div><div class="bubble bot-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  msgs.appendChild(div);
+  scrollToBottom();
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing-indicator');
+  if (t) t.remove();
+}
+
+function scrollToBottom() {
+  const msgs = document.getElementById('messages');
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function escHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// scroll fab
+document.getElementById('messages').addEventListener('scroll', function() {
+  const fab = document.getElementById('scroll-fab');
+  const isNearBottom = this.scrollHeight - this.scrollTop - this.clientHeight < 100;
+  fab.style.display = isNearBottom ? 'none' : 'flex';
+});
+</script>
+</body>
+</html>

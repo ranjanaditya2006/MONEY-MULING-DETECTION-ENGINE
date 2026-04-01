@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Money‑Mule AI Assistant</title>
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --primary: #4361ee;
+      --secondary: #3a0ca3;
+      --text: #101828;
+      --light-gray: #e0e6f1;
+      --border: #cbd2d9;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 1rem 1rem 2rem;
+    }
+    header {
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    header h1 {
+      color: var(--secondary);
+      font-size: 1.8rem;
+    }
+    header p {
+      margin-top: 0.5rem;
+      color: #475569;
+      font-size: 0.95rem;
+    }
+    .two-column {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .info-box {
+      background: #fff;
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .info-box h2 {
+      margin-bottom: 0.5rem;
+      font-size: 1.1rem;
+      color: var(--secondary);
+    }
+    .info-box ul {
+      margin-left: 1.2rem;
+      font-size: 0.9rem;
+    }
+    .info-box li {
+      margin-bottom: 0.3rem;
+    }
+    .chat-box {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      overflow: hidden;
+    }
+    .chat-header {
+      background: var(--secondary);
+      color: #fff;
+      padding: 0.8rem 1rem;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    .chat-messages {
+      height: 320px;
+      overflow-y: auto;
+      padding: 1rem;
+      background: #f9fbfd;
+      border-bottom: 1px solid var(--border);
+    }
+    .msg {
+      margin-bottom: 0.8rem;
+      padding: 0.6rem 0.9rem;
+      border-radius: 18px;
+      max-width: 85%;
+    }
+    .user {
+      background: #e0f2ff;
+      align-self: flex-end;
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
+    }
+    .ai {
+      background: #f0f4f8;
+      border-bottom-left-radius: 4px;
+    }
+    .chat-footer {
+      display: flex;
+      padding: 0.8rem 1rem;
+      border-top: 1px solid var(--border);
+      background: #fff;
+    }
+    .chat-input {
+      flex: 1;
+      padding: 0.6rem 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      outline: none;
+      font-size: 0.95rem;
+    }
+    .chat-input:focus {
+      border-color: var(--primary);
+    }
+    .send-btn {
+      margin-left: 0.5rem;
+      padding: 0.6rem 1rem;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 24px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .send-btn:hover {
+      background: #3651d6;
+    }
+
+    @media (max-width: 768px) {
+      .two-column {
+        grid-template-columns: 1fr;
+      }
+      .chat-messages {
+        height: 240px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Money‑Mule AI Assistant</h1>
+      <p>Ask questions about money muling, detection patterns, and how to protect accounts from being used as money mules.</p>
+    </header>
+
+    <div class="two-column">
+      <div class="info-box">
+        <h2>What is Money Muling?</h2>
+        <p>
+          Money muling is a technique used by criminals to launder money through
+          third‑party accounts. A “money mule” receives funds from a scam victim
+          or other source and then forwards them, often across several accounts,
+          to hide the trail.
+        </p>
+        <ul>
+          <li>Money mules may be knowingly or unknowingly involved.</li>
+          <li>Typical red flags: rapid small transfers, many accounts, short‑lived activity.</li>
+          <li>Detection often uses transaction graphs, timing features, and behavioral patterns.</li>
+        </ul>
+      </div>
+
+      <div class="info-box">
+        <h2>About This Demo</h2>
+        <p>
+          This page is inspired by the <strong>Money‑Muling</strong> detection project on GitHub.
+          It demonstrates how an AI‑powered chat assistant can help explain and analyze money‑mule‑related queries.
+        </p>
+        <p>
+          In a real system, you would connect the chat to a backend model (e.g., your fraud‑detection or GNN‑based model)
+          to analyze transaction data and return risk insights.
+        </p>
+      </div>
+    </div>
+
+    <section class="chat-box">
+      <div class="chat-header">AI Chat — Money‑Mule Assistant</div>
+      <div id="chat-messages" class="chat-messages"></div>
+      <div class="chat-footer">
+        <input id="chat-input"
+               class="chat-input"
+               type="text"
+               placeholder="Ask about money muling, detection rules, or transaction patterns..."
+               autocomplete="off"/>
+        <button id="send-btn" class="send-btn">Send</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const chatMessagesEl = document.getElementById("chat-messages");
+    const chatInputEl = document.getElementById("chat-input");
+    const sendBtnEl = document.getElementById("send-btn");
+
+    const botName = "Money‑Mule AI";
+
+    // fake “AI” responses (you can replace this with real API calls)
+    const responses = {
+      hi: "Hi! I'm the Money‑Mule Assistant. Ask me about money muling, detection patterns, or how to build a detection system.",
+      "what is money muling": "Money muling is when an account receives funds from victims of fraud and then forwards them (often across multiple accounts) to help criminals hide the source. The mule account may or may not be aware of the crime.",
+      "how to detect": "Detection usually combines transaction‑graph analysis, timing features, and behavioral anomalies. Common signals include: rapid multi‑hop transfers, many different counterparties, short‑lived 'ping' transactions, and high‑risk jurisdictions.",
+      "graph features": "Graph‑based models can compute features like: number of connected accounts, average degree, community clustering, and credits‑from‑fraud‑prone accounts. These help flag suspicious nodes (potential mule accounts).",
+      "transaction pattern": "Regular ping‑pong patterns, fast inward then outward transfers, or layering through many small accounts are typical signs of money muling. Time‑based features (e.g., frequency within 10‑minute windows) are also useful.",
+      default: "I'm focusing on topics related to money muling and fraud detection. Try asking about detection methods, transaction graphs, or how to analyze mule accounts."
+    };
+
+    // scroll chat to bottom
+    function scrollToBottom() {
+      chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+    }
+
+    // add message to chat
+    function addMessage(text, isUser) {
+      const div = document.createElement("div");
+      div.className = `msg ${isUser ? "user" : "ai"}`;
+      div.textContent = text;
+      chatMessagesEl.appendChild(div);
+      scrollToBottom();
+    }
+
+    // bot reply (simple keyword matching; replace with real model API)
+    function botReply(userMsg) {
+      const clean = userMsg.trim().toLowerCase();
+
+      for (const key of Object.keys(responses)) {
+        if (clean.includes(key)) {
+          return responses[key];
+        }
+      }
+      return responses.default;
+    }
+
+    // send message handler
+    function sendMessage() {
+      const text = chatInputEl.value.trim();
+      if (!text) return;
+
+      // echo user message
+      addMessage(text, true);
+      chatInputEl.value = "";
+
+      // show thinking
+      const tempMsg = document.createElement("div");
+      tempMsg.className = "msg ai";
+      tempMsg.textContent = "Thinking...";
+      chatMessagesEl.appendChild(tempMsg);
+      scrollToBottom();
+
+      // simulate delay
+      setTimeout(() => {
+        tempMsg.remove();
+        const reply = botReply(text);
+        addMessage(`${botName}: ${reply}`, false);
+      }, 600);
+    }
+
+    // events
+    sendBtnEl.addEventListener("click", sendMessage);
+    chatInputEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        sendMessage();
+      }
+    });
+  </script>
+</body>
+</html>
